@@ -13,8 +13,8 @@ const char* password = "12345678";
 
 WebServer server(80);
 
-int ontime = 0;
-int forsink = 0;
+int ontime;
+int forsink;
 //uint64_t forsink = 1000; //delay between runs
 int save_forsink = 10; // forsink saved in EEPROM as int (forsink divided by 100)
 uint64_t tempus;
@@ -47,8 +47,8 @@ void handleUpdate() {
         ontime = server.arg("ontime").toInt();
         forsink = server.arg("forsink").toInt();
 
-        EEPROM.write(0, ontime);
-        EEPROM.write(1, forsink);
+        EEPROM.put(0, ontime);
+        EEPROM.put(sizeof(ontime), forsink);
         EEPROM.commit();
 
         server.send(200, "text/html", "<html><body><h1>Settings Saved</h1><a href=\"/\">Go Back</a></body></html>");
@@ -60,7 +60,8 @@ void handleUpdate() {
 void setup() {
     Serial.begin(115200);
     EEPROM.begin(512);
-
+    EEPROM.get(0, ontime);
+    EEPROM.get(sizeof(ontime), forsink);
     WiFi.softAP(ssid, password);
     Serial.println("Access Point Started");
     Serial.print("IP Address: ");
@@ -166,7 +167,7 @@ switch (mstatus) {
                 AtomS3.Display.setTextColor(BLACK);
                 AtomS3.Display.drawString(String(forsink), 10, 60);
                 AtomS3.Display.setTextColor(WHITE);
-                forsink = forsink + relative_change*100; // Update the value
+                forsink = forsink + relative_change; // Update the value
                 AtomS3.Display.drawString(String(forsink), 10, 60);
                 last_value = encoder_value;
             }
@@ -184,9 +185,8 @@ switch (mstatus) {
             
             AtomS3.update();
             if (AtomS3.BtnA.wasPressed()) { // Save to EEPROM
-                EEPROM.write(0, ontime);
-                save_forsink = forsink/100;
-                EEPROM.write(1,save_forsink);
+                EEPROM.put(0, ontime);
+                EEPROM.put(sizeof(ontime), forsink);
                 EEPROM.commit();
 
                 // Flash the display in black and green
